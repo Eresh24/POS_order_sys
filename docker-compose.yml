@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: qr_ordering_db
+    environment:
+      POSTGRES_DB: qr_ordering
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - qr_ordering_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: qr_ordering_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - qr_ordering_network
+    command: redis-server --appendonly yes
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: qr_ordering_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/qr_ordering
+      - REDIS_URL=redis://redis:6379
+      - DEBUG=True
+      - ENVIRONMENT=development
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - qr_ordering_network
+    restart: unless-stopped
+
+  # Customer Frontend (Vite + Node 24)
+  customer-frontend:
+    build:
+      context: ./frontend/customer-app
+      dockerfile: Dockerfile.dev
+    container_name: qr_ordering_customer_app
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend/customer-app:/app
+      - /app/node_modules
+    networks:
+      - qr_ordering_network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+  # Admin Dashboard (Vite + Node 24)
+  admin-dashboard:
+    build:
+      context: ./frontend/admin-dashboard
+      dockerfile: Dockerfile.dev
+    container_name: qr_ordering_admin
+    ports:
+      - "5174:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    volumes:
+      - ./frontend/admin-dashboard:/app
+      - /app/node_modules
+    networks:
+      - qr_ordering_network
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  qr_ordering_network:
+    driver: bridge

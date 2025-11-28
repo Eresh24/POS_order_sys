@@ -1,0 +1,40 @@
+# FastAPI and ASGI server
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Database
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# Redis
+redis==5.2.1
+hiredis==3.0.0
+
+# Pydantic for validation
+pydantic==2.10.5
+pydantic-settings==2.7.0
+
+# QR Code generation
+qrcode[pil]==8.0
+pillow==11.0.0
+
+# HTTP client
+httpx==0.28.1
+
+# CORS
+python-multipart==0.0.20
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Authentication (for future use)
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+
+# Square SDK (for POS integration)
+squareup==40.0.0.20241120
